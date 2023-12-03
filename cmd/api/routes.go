@@ -13,5 +13,7 @@ func routes() http.Handler {
 		w.Write([]byte("Hello there"))
 	})
 
+	r.Get("/api/v1/tasks", handleGetTasks)
+
 	return r
 }
