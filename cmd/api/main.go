@@ -17,8 +17,13 @@ func main() {
 		w.Write([]byte("Hello there"))
 	})
 
+	srv := &http.Server{
+		Addr:    ":4000",
+		Handler: mux,
+	}
+
 	log.Println("server running on http://localhost:4000")
-	err := http.ListenAndServe(":4000", mux)
+	err := srv.ListenAndServe()
 	if err != nil {
 		log.Fatal(err)
 	}
