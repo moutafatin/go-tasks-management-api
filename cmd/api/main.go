@@ -6,20 +6,9 @@ import (
 )
 
 func main() {
-	mux := http.NewServeMux()
-
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/" {
-			http.NotFound(w, r)
-			return
-		}
-
-		w.Write([]byte("Hello there"))
-	})
-
 	srv := &http.Server{
 		Addr:    ":4000",
-		Handler: mux,
+		Handler: routes(),
 	}
 
 	log.Println("server running on http://localhost:4000")
