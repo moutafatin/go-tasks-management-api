@@ -1,6 +1,13 @@
 version: "3"
 
+dotenv:
+  - .env
+
 tasks:
   run:
     cmd: go run ./cmd/api
     silent: true
+  migrate-new:
+    cmd: migrate create -seq -ext .sql -dir ./migrations {{.CLI_ARGS}}
+  migrate:
+    cmd: migrate -path ./migrations -database $POSTGRES_URL {{.CLI_ARGS}}
