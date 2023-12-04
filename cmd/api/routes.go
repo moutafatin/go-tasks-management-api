@@ -6,14 +6,10 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-func routes() http.Handler {
+func (app *application) routes() http.Handler {
 	r := chi.NewRouter()
 
-	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("Hello there"))
-	})
-
-	r.Get("/api/v1/tasks", handleGetTasks)
+	r.Get("/api/v1/tasks", app.handleGetTasks)
 
 	return r
 }

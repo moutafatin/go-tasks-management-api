@@ -9,6 +9,7 @@ import (
 	"os"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/moutafatin/go-tasks-management-api/internal/data"
 	"github.com/subosito/gotenv"
 )
 
@@ -19,6 +20,10 @@ type dbConfig struct {
 type config struct {
 	port int
 	db   dbConfig
+}
+
+type application struct {
+	models data.Models
 }
 
 func main() {
@@ -36,9 +41,13 @@ func main() {
 	defer db.Close()
 	log.Println("Connected to database")
 
+	app := &application{
+		models: *data.NewModels(db),
+	}
+
 	srv := &http.Server{
 		Addr:    fmt.Sprintf(":%d", cfg.port),
-		Handler: routes(),
+		Handler: app.routes(),
 	}
 
 	log.Println(fmt.Sprintf("server running on http://localhost%s", srv.Addr))
