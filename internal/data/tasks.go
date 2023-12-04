@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -13,7 +14,7 @@ type Task struct {
 	Description string
 	Priority    string
 	Status      string
-	CreatedAt   time.Time
+	CreatedAt   time.Time `db:"created_at"`
 }
 
 type tasksModel struct {
@@ -28,16 +29,5 @@ func (t *tasksModel) GetAll() ([]*Task, error) {
 		return nil, err
 	}
 
-	tasks := []*Task{}
-	for rows.Next() {
-		var task Task
-
-		err = rows.Scan(&task.ID, &task.Title, &task.Description, &task.Priority, &task.Status, &task.CreatedAt)
-		if err != nil {
-			return nil, err
-		}
-
-		tasks = append(tasks, &task)
-	}
-	return tasks, nil
+	return pgx.CollectRows(rows, pgx.RowToAddrOfStructByName[Task])
 }
