@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"net/http"
 )
 
@@ -10,15 +9,9 @@ func (app *application) handleGetTasks(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
-	w.Header().Set("Content-Type", "application/json")
 
-	js, err := json.Marshal(tasks)
+	err = app.writeJSON(w, http.StatusOK, envelope{"tasks": tasks}, nil)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
 	}
-
-	w.WriteHeader(http.StatusOK)
-
-	w.Write(js)
 }
