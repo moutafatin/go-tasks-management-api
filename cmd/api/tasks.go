@@ -12,6 +12,6 @@ func (app *application) handleGetTasks(w http.ResponseWriter, r *http.Request) {
 
 	err = app.writeJSON(w, http.StatusOK, envelope{"tasks": tasks}, nil)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		app.serverErrorResponse(w, r, err)
 	}
 }
