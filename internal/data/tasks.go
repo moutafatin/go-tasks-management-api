@@ -114,6 +114,19 @@ func (t *tasksModel) Insert(task *Task) error {
 	return t.DB.QueryRow(context.Background(), stmt, args...).Scan(&task.ID, &task.CreatedAt)
 }
 
+func (t *tasksModel) Delete(id int) error {
+	stmt := `DELETE FROM tasks WHERE id = $1`
+	res, err := t.DB.Exec(context.Background(), stmt, id)
+	if err != nil {
+		return err
+	}
+
+	if res.RowsAffected() != 1 {
+		return ErrRecordNotFound
+	}
+	return nil
+}
+
 func ValidateTask(v *validator.Validator, task *Task) {
 	v.Check(validator.NotEmpty(task.Title), "title", "title is required")
 	v.Check(validator.NotEmpty(task.Description), "description", "description is required")

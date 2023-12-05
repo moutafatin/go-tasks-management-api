@@ -11,6 +11,7 @@ func (app *application) routes() http.Handler {
 
 	r.Get("/api/v1/tasks", app.handleGetTasks)
 	r.Get("/api/v1/tasks/{id}", app.handleGetTaskByID)
+	r.Delete("/api/v1/tasks/{id}", app.handleDeleteTask)
 
 	r.Post("/api/v1/tasks", app.handleCreateTask)
 

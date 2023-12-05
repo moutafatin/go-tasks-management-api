@@ -1,6 +1,13 @@
 package main
 
-import "net/http"
+import (
+	"errors"
+	"net/http"
+)
+
+const defautNotFoundMessage = "the requested resource could not be found"
+
+var ErrInvalidIdParam = errors.New("invalid id parameter")
 
 func (app *application) logError(r *http.Request, err error) {
 	var (
@@ -30,8 +37,7 @@ func (app *application) badRequestResponse(w http.ResponseWriter, r *http.Reques
 	app.errorResponse(w, r, http.StatusBadRequest, err.Error())
 }
 
-func (app *application) notFoundResponse(w http.ResponseWriter, r *http.Request) {
-	message := "the requested resource could not be found"
+func (app *application) notFoundResponse(w http.ResponseWriter, r *http.Request, message string) {
 	app.errorResponse(w, r, http.StatusNotFound, message)
 }
 

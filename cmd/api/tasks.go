@@ -59,14 +59,14 @@ func (app *application) handleGetTasks(w http.ResponseWriter, r *http.Request) {
 func (app *application) handleGetTaskByID(w http.ResponseWriter, r *http.Request) {
 	id, err := app.readIntParam(r, "id")
 	if err != nil {
-		app.notFoundResponse(w, r)
+		app.badRequestResponse(w, r, ErrInvalidIdParam)
 		return
 	}
 
 	task, err := app.models.Tasks.GetByID(id)
 	if err != nil {
 		if errors.Is(err, data.ErrRecordNotFound) {
-			app.notFoundResponse(w, r)
+			app.notFoundResponse(w, r, "task not found")
 			return
 		}
 
@@ -75,6 +75,31 @@ func (app *application) handleGetTaskByID(w http.ResponseWriter, r *http.Request
 	}
 
 	err = app.writeJSON(w, http.StatusOK, envelope{"task": task}, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
+}
+
+func (app *application) handleDeleteTask(w http.ResponseWriter, r *http.Request) {
+	id, err := app.readIntParam(r, "id")
+	if err != nil {
+		app.badRequestResponse(w, r, ErrInvalidIdParam)
+		return
+	}
+
+	err = app.models.Tasks.Delete(id)
+	if err != nil {
+		if errors.Is(err, data.ErrRecordNotFound) {
+			app.notFoundResponse(w, r, "task not found")
+			return
+		}
+
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	// maybe return 201 no content, its depend
+	err = app.writeJSON(w, http.StatusOK, envelope{"message": "task deleted successfully"}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}
