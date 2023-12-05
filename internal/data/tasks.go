@@ -127,6 +127,15 @@ func (t *tasksModel) Delete(id int) error {
 	return nil
 }
 
+func (t *tasksModel) Update(task *Task) error {
+	stmt := `UPDATE tasks SET title = $1, description = $2, priority = $3, status = $4 WHERE id = $5`
+	args := []any{task.Title, task.Description, task.Priority, task.Status, task.ID}
+
+	_, err := t.DB.Exec(context.Background(), stmt, args...)
+
+	return err
+}
+
 func ValidateTask(v *validator.Validator, task *Task) {
 	v.Check(validator.NotEmpty(task.Title), "title", "title is required")
 	v.Check(validator.NotEmpty(task.Description), "description", "description is required")

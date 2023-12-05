@@ -104,3 +104,67 @@ func (app *application) handleDeleteTask(w http.ResponseWriter, r *http.Request)
 		app.serverErrorResponse(w, r, err)
 	}
 }
+
+func (app *application) handleUpdateTask(w http.ResponseWriter, r *http.Request) {
+	id, err := app.readIntParam(r, "id")
+	if err != nil {
+		app.badRequestResponse(w, r, ErrInvalidIdParam)
+		return
+	}
+
+	task, err := app.models.Tasks.GetByID(id)
+	if err != nil {
+		if errors.Is(err, data.ErrRecordNotFound) {
+			app.notFoundResponse(w, r, "task not found")
+			return
+		}
+
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	var input struct {
+		Title       *string `json:"title"`
+		Description *string `json:"description"`
+		Priority    *string `json:"priority"`
+		Status      *string `json:"status"`
+	}
+
+	err = app.readJSON(w, r, &input)
+	if err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+
+	if input.Title != nil {
+		task.Title = *input.Title
+	}
+	if input.Description != nil {
+		task.Description = *input.Description
+	}
+	if input.Priority != nil {
+		task.Priority = data.GetTaskPriority(input.Priority)
+	}
+	if input.Status != nil {
+		task.Status = data.GetTaskStatus(input.Status)
+	}
+
+	v := validator.New()
+
+	if data.ValidateTask(v, task); !v.Valid() {
+		app.fieldsErrorResponse(w, r, v.Errors)
+		return
+	}
+
+	err = app.models.Tasks.Update(task)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	err = app.writeJSON(w, http.StatusOK, envelope{"message": "task updated successfully"}, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+}
