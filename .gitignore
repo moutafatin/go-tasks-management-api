@@ -3,4 +3,4 @@ node_modules/
 .prettierrc 
 package-lock.json
 package.json
-
+tmp/
