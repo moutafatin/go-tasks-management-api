@@ -6,6 +6,16 @@ meta {
 
 post {
   url: http://localhost:4000/api/v1/tasks
-  body: none
+  body: json
   auth: none
+}
+
+body:json {
+  {
+    "title": "Learning backend",
+    "description": "a long description",
+    "priority": "high",
+    "status": "todo"
+  }
+  
 }

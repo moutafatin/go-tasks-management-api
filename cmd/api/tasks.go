@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -12,17 +11,15 @@ import (
 // TODO: finish this handler
 func (app *application) handleCreateTask(w http.ResponseWriter, r *http.Request) {
 	var input struct {
-		Title       string
-		Description string
-		Priority    string
-		Status      string
+		Title       string `json:"title"`
+		Description string `json:"description"`
+		Priority    string `json:"priority"`
+		Status      string `json:"status"`
 	}
 
-	dec := json.NewDecoder(r.Body)
-
-	err := dec.Decode(&input)
+	err := app.readJSON(w, r, &input)
 	if err != nil {
-		app.serverErrorResponse(w, r, err)
+		app.badRequestResponse(w, r, err)
 		return
 	}
 

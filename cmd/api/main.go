@@ -35,6 +35,8 @@ func main() {
 	flag.StringVar(&cfg.db.dsn, "dsn", os.Getenv("POSTGRES_URL"), "Postgres connection url")
 	flag.IntVar(&cfg.port, "port", getEnvInt("PORT"), "TCP port to listen to")
 
+	flag.Parse()
+
 	logHandler := slog.NewTextHandler(os.Stdout, nil)
 	logger := slog.New(logHandler)
 
