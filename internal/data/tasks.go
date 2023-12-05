@@ -8,6 +8,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/moutafatin/go-tasks-management-api/internal/validator"
 )
 
 var ErrRecordNotFound = errors.New("record not found")
@@ -28,29 +29,39 @@ const (
 	TaskPriorityHigh   TaskPriority = "HIGH"
 )
 
-func GetTaskStatus(status string) TaskStatus {
-	switch strings.ToLower(status) {
+func GetTaskStatus(status *string) TaskStatus {
+	if status == nil {
+		return taskStatusTodo
+	}
+	switch strings.ToLower(*status) {
 	case "todo":
 		return taskStatusTodo
 	case "in_progress":
 		return taskStatusInProgress
 	case "done":
 		return taskStatusDone
-	default:
+	case "":
 		return ""
+	default:
+		return TaskStatus("invalid")
 	}
 }
 
-func GetTaskPriority(priority string) TaskPriority {
-	switch strings.ToLower(priority) {
+func GetTaskPriority(priority *string) TaskPriority {
+	if priority == nil {
+		return TaskPriorityLow
+	}
+	switch strings.ToLower(*priority) {
 	case "low":
 		return TaskPriorityLow
 	case "medium":
 		return TaskPriorityMedium
 	case "high":
 		return TaskPriorityHigh
-	default:
+	case "":
 		return ""
+	default:
+		return TaskPriority("invalid")
 	}
 }
 
@@ -101,4 +112,13 @@ func (t *tasksModel) Insert(task *Task) error {
 	args := []any{task.Title, task.Description, task.Priority, task.Status}
 
 	return t.DB.QueryRow(context.Background(), stmt, args...).Scan(&task.ID, &task.CreatedAt)
+}
+
+func ValidateTask(v *validator.Validator, task *Task) {
+	v.Check(validator.NotEmpty(task.Title), "title", "title is required")
+	v.Check(validator.NotEmpty(task.Description), "description", "description is required")
+	v.Check(validator.NotEmpty(string(task.Priority)), "priority", "priority must not be empty if set")
+	v.Check(validator.PremittedValues(task.Priority, []TaskPriority{TaskPriorityLow, TaskPriorityMedium, TaskPriorityHigh}), "priority", "Invalid priority value, must be one of `low`, `medium`, `high")
+	v.Check(validator.NotEmpty(string(task.Status)), "status", "status must not be empty if set")
+	v.Check(validator.PremittedValues(task.Status, []TaskStatus{taskStatusTodo, taskStatusInProgress, taskStatusDone}), "status", "Invalid status value, must be one of `todo`, `in_progress`, `done`")
 }

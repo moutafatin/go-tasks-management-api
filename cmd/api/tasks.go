@@ -6,15 +6,15 @@ import (
 	"net/http"
 
 	"github.com/moutafatin/go-tasks-management-api/internal/data"
+	"github.com/moutafatin/go-tasks-management-api/internal/validator"
 )
 
-// TODO: finish this handler
 func (app *application) handleCreateTask(w http.ResponseWriter, r *http.Request) {
 	var input struct {
-		Title       string `json:"title"`
-		Description string `json:"description"`
-		Priority    string `json:"priority"`
-		Status      string `json:"status"`
+		Title       string  `json:"title"`
+		Description string  `json:"description"`
+		Priority    *string `json:"priority"`
+		Status      *string `json:"status"`
 	}
 
 	err := app.readJSON(w, r, &input)
@@ -23,13 +23,17 @@ func (app *application) handleCreateTask(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	// TODO: validate input
-
 	task := &data.Task{
 		Title:       input.Title,
 		Description: input.Description,
 		Priority:    data.GetTaskPriority(input.Priority),
 		Status:      data.GetTaskStatus(input.Status),
+	}
+	v := validator.New()
+
+	if data.ValidateTask(v, task); !v.Valid() {
+		app.fieldsErrorResponse(w, r, v.Errors)
+		return
 	}
 	err = app.models.Tasks.Insert(task)
 	if err != nil {
