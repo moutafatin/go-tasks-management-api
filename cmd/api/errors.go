@@ -44,3 +44,8 @@ func (app *application) notFoundResponse(w http.ResponseWriter, r *http.Request,
 func (app *application) fieldsErrorResponse(w http.ResponseWriter, r *http.Request, errs map[string]string) {
 	app.errorResponse(w, r, http.StatusUnprocessableEntity, errs)
 }
+
+func (app *application) rateLimitExceededResponse(w http.ResponseWriter, r *http.Request) {
+	message := "rate limit exceeded"
+	app.errorResponse(w, r, http.StatusTooManyRequests, message)
+}

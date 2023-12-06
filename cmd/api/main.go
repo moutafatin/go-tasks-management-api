@@ -18,13 +18,19 @@ type dbConfig struct {
 }
 
 type config struct {
-	port int
-	db   dbConfig
+	port    int
+	db      dbConfig
+	limiter struct {
+		rps     float64
+		burst   int
+		enabled bool
+	}
 }
 
 type application struct {
 	models data.Models
 	logger *slog.Logger
+	config config
 }
 
 func main() {
@@ -34,6 +40,10 @@ func main() {
 
 	flag.StringVar(&cfg.db.dsn, "dsn", os.Getenv("POSTGRES_URL"), "Postgres connection url")
 	flag.IntVar(&cfg.port, "port", getEnvInt("PORT"), "TCP port to listen to")
+
+	flag.Float64Var(&cfg.limiter.rps, "limiter-rps", 2, "Rate limiter maximum requests per second")
+	flag.IntVar(&cfg.limiter.burst, "limiter-burst", 4, "Rate limiter maximum burst")
+	flag.BoolVar(&cfg.limiter.enabled, "limiter-enabled", true, "Enable rate limiter")
 
 	flag.Parse()
 
@@ -52,6 +62,7 @@ func main() {
 	app := &application{
 		models: *data.NewModels(db),
 		logger: logger,
+		config: cfg,
 	}
 
 	srv := &http.Server{

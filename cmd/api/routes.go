@@ -4,10 +4,14 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 )
 
 func (app *application) routes() http.Handler {
 	r := chi.NewRouter()
+
+	r.Use(middleware.Recoverer)
+	r.Use(app.rateLimit)
 
 	r.Get("/api/v1/tasks", app.handleGetTasks)
 	r.Get("/api/v1/tasks/{id}", app.handleGetTaskByID)
