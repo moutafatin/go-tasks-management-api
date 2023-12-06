@@ -3,9 +3,7 @@ package main
 import (
 	"context"
 	"flag"
-	"fmt"
 	"log/slog"
-	"net/http"
 	"os"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -47,8 +45,7 @@ func main() {
 
 	flag.Parse()
 
-	logHandler := slog.NewTextHandler(os.Stdout, nil)
-	logger := slog.New(logHandler)
+	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 
 	db, err := openDb(cfg.db.dsn)
 	if err != nil {
@@ -65,18 +62,11 @@ func main() {
 		config: cfg,
 	}
 
-	srv := &http.Server{
-		Addr:     fmt.Sprintf(":%d", cfg.port),
-		Handler:  app.routes(),
-		ErrorLog: slog.NewLogLogger(logHandler, slog.LevelError),
-	}
-
-	logger.Info(fmt.Sprintf("server running on http://localhost%s", srv.Addr))
-	err = srv.ListenAndServe()
+	err = app.serve()
 	if err != nil {
 		logger.Error(err.Error())
-		os.Exit(1)
 	}
+	os.Exit(1)
 }
 
 func openDb(dsn string) (*pgxpool.Pool, error) {
