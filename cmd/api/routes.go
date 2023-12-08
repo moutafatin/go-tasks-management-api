@@ -21,6 +21,7 @@ func (app *application) routes() http.Handler {
 	r.Post("/api/v1/tasks", app.handleCreateTask)
 
 	r.Post("/api/v1/users", app.handleRegisterUser)
+	r.Put("/api/v1/users/activated", app.handleActivateUser)
 
 	return r
 }

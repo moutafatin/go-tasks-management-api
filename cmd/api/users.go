@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"net/http"
+	"time"
 
 	"github.com/moutafatin/go-tasks-management-api/internal/data"
 	"github.com/moutafatin/go-tasks-management-api/internal/validator"
@@ -52,8 +53,18 @@ func (app *application) handleRegisterUser(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
+	token, err := app.models.Tokens.New(user.ID, 24*time.Hour, data.ScopeActivation)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
 	app.background(func() {
-		err = app.mailer.Send(user.Email, "user_welcome.tmpl", user)
+		data := map[string]any{
+			"activationToken": token.PlainText,
+			"userID":          user.ID,
+		}
+		err = app.mailer.Send(user.Email, "user_welcome.tmpl", data)
 		if err != nil {
 			app.logger.Error(err.Error())
 		}
@@ -63,5 +74,54 @@ func (app *application) handleRegisterUser(w http.ResponseWriter, r *http.Reques
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
+	}
+}
+
+func (app *application) handleActivateUser(w http.ResponseWriter, r *http.Request) {
+	var input struct {
+		ActivationToken string
+	}
+
+	err := app.readJSON(w, r, &input)
+	if err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+
+	v := validator.New()
+
+	if data.ValidateTokenPlaintext(v, input.ActivationToken); !v.Valid() {
+		app.fieldsErrorResponse(w, r, v.Errors)
+		return
+	}
+
+	user, err := app.models.Users.GetForToken(input.ActivationToken, data.ScopeActivation)
+	if err != nil {
+		if errors.Is(err, data.ErrRecordNotFound) {
+			v.AddError("token", "invalid or expired activation token")
+			app.fieldsErrorResponse(w, r, v.Errors)
+			return
+		}
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	user.Activated = true
+
+	err = app.models.Users.Update(user)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	err = app.models.Tokens.DeleteAllForUser(user.ID, data.ScopeActivation)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	err = app.writeJSON(w, http.StatusOK, envelope{"user": user}, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
 	}
 }

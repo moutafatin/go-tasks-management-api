@@ -2,6 +2,7 @@ package data
 
 import (
 	"context"
+	"crypto/sha256"
 	"errors"
 	"strings"
 	"time"
@@ -139,6 +140,30 @@ RETURNING version`
 	}
 
 	return nil
+}
+
+func (u usersModel) GetForToken(token, scope string) (*User, error) {
+	hash := sha256.Sum256([]byte(token))
+	stmt := `
+      SELECT users.id, users.created_at, users.name, users.email, users.password_hash, users.activated, users.version
+      FROM users
+      INNER JOIN tokens
+      ON users.id = tokens.user_id
+      WHERE tokens.hash = $1
+      AND tokens.scope = $2
+      AND tokens.expiry > $3`
+
+	var user User
+	err := u.DB.QueryRow(context.Background(), stmt, hash[:], scope, time.Now()).Scan(&user.ID, &user.CreatedAt, &user.Name, &user.Email, &user.Password.hash, &user.Activated, &user.Version)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrRecordNotFound
+		}
+
+		return nil, err
+	}
+
+	return &user, nil
 }
 
 func ValidateEmail(v *validator.Validator, email string) {
