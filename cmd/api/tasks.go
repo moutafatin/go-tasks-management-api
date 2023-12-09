@@ -32,7 +32,7 @@ func (app *application) handleCreateTask(w http.ResponseWriter, r *http.Request)
 	v := validator.New()
 
 	if data.ValidateTask(v, task); !v.Valid() {
-		app.fieldsErrorResponse(w, r, v.Errors)
+		app.faildErrorResponse(w, r, v.Errors)
 		return
 	}
 	err = app.models.Tasks.Insert(task)
@@ -152,7 +152,7 @@ func (app *application) handleUpdateTask(w http.ResponseWriter, r *http.Request)
 	v := validator.New()
 
 	if data.ValidateTask(v, task); !v.Valid() {
-		app.fieldsErrorResponse(w, r, v.Errors)
+		app.faildErrorResponse(w, r, v.Errors)
 		return
 	}
 

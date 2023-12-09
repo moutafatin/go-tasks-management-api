@@ -41,11 +41,33 @@ func (app *application) notFoundResponse(w http.ResponseWriter, r *http.Request,
 	app.errorResponse(w, r, http.StatusNotFound, message)
 }
 
-func (app *application) fieldsErrorResponse(w http.ResponseWriter, r *http.Request, errs map[string]string) {
+func (app *application) faildErrorResponse(w http.ResponseWriter, r *http.Request, errs map[string]string) {
 	app.errorResponse(w, r, http.StatusUnprocessableEntity, errs)
 }
 
 func (app *application) rateLimitExceededResponse(w http.ResponseWriter, r *http.Request) {
 	message := "rate limit exceeded"
 	app.errorResponse(w, r, http.StatusTooManyRequests, message)
+}
+
+func (app *application) invalidCredentialsResponse(w http.ResponseWriter, r *http.Request) {
+	message := "invalid authentication credentials"
+	app.errorResponse(w, r, http.StatusUnauthorized, message)
+}
+
+func (app *application) invalidAuthenticationTokenResponse(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("WWW-Authenticate", "Bearer")
+
+	message := "invalid or missing authentication token"
+	app.errorResponse(w, r, http.StatusUnauthorized, message)
+}
+
+func (app *application) unAuthorizedResponse(w http.ResponseWriter, r *http.Request) {
+	message := "you are not authorized to access this resource"
+	app.errorResponse(w, r, http.StatusUnauthorized, message)
+}
+
+func (app *application) inactiveAccountResponse(w http.ResponseWriter, r *http.Request) {
+	message := "your user account must be activated to access this resource"
+	app.errorResponse(w, r, http.StatusForbidden, message)
 }

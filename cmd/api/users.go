@@ -37,7 +37,7 @@ func (app *application) handleRegisterUser(w http.ResponseWriter, r *http.Reques
 	}
 
 	if data.ValidateUser(v, user); !v.Valid() {
-		app.fieldsErrorResponse(w, r, v.Errors)
+		app.faildErrorResponse(w, r, v.Errors)
 		return
 	}
 
@@ -45,7 +45,7 @@ func (app *application) handleRegisterUser(w http.ResponseWriter, r *http.Reques
 	if err != nil {
 		if errors.Is(err, data.ErrDuplicateEmail) {
 			v.AddError("email", "a user with this email already exists")
-			app.fieldsErrorResponse(w, r, v.Errors)
+			app.faildErrorResponse(w, r, v.Errors)
 			return
 		}
 
@@ -91,7 +91,7 @@ func (app *application) handleActivateUser(w http.ResponseWriter, r *http.Reques
 	v := validator.New()
 
 	if data.ValidateTokenPlaintext(v, input.ActivationToken); !v.Valid() {
-		app.fieldsErrorResponse(w, r, v.Errors)
+		app.faildErrorResponse(w, r, v.Errors)
 		return
 	}
 
@@ -99,7 +99,7 @@ func (app *application) handleActivateUser(w http.ResponseWriter, r *http.Reques
 	if err != nil {
 		if errors.Is(err, data.ErrRecordNotFound) {
 			v.AddError("token", "invalid or expired activation token")
-			app.fieldsErrorResponse(w, r, v.Errors)
+			app.faildErrorResponse(w, r, v.Errors)
 			return
 		}
 		app.serverErrorResponse(w, r, err)

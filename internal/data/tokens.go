@@ -11,14 +11,17 @@ import (
 	"github.com/moutafatin/go-tasks-management-api/internal/validator"
 )
 
-const ScopeActivation = "activation"
+const (
+	ScopeActivation     = "activation"
+	ScopeAuthentication = "authentication"
+)
 
 type Token struct {
-	PlainText string
-	Hash      []byte
-	UserID    int
-	Expiry    time.Time
-	Scope     string
+	PlainText string    `json:"token"`
+	Hash      []byte    `json:"-"`
+	UserID    int       `json:"-"`
+	Expiry    time.Time `json:"expiry"`
+	Scope     string    `json:"-"`
 }
 
 func generateToken(userID int, ttl time.Duration, scope string) (*Token, error) {
