@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/moutafatin/go-tasks-management-api/internal/data"
@@ -23,11 +24,14 @@ func (app *application) handleCreateTask(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	user := app.contextGetUser(r)
+	log.Println("USER ID ", user.ID)
 	task := &data.Task{
 		Title:       input.Title,
 		Description: input.Description,
 		Priority:    data.GetTaskPriority(input.Priority),
 		Status:      data.GetTaskStatus(input.Status),
+		UserID:      user.ID,
 	}
 	v := validator.New()
 
@@ -45,7 +49,8 @@ func (app *application) handleCreateTask(w http.ResponseWriter, r *http.Request)
 }
 
 func (app *application) handleGetTasks(w http.ResponseWriter, r *http.Request) {
-	tasks, err := app.models.Tasks.GetAll()
+	user := app.contextGetUser(r)
+	tasks, err := app.models.Tasks.GetAll(user.ID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
@@ -63,7 +68,9 @@ func (app *application) handleGetTaskByID(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	task, err := app.models.Tasks.GetByID(id)
+	user := app.contextGetUser(r)
+
+	task, err := app.models.Tasks.GetByID(id, user.ID)
 	if err != nil {
 		if errors.Is(err, data.ErrRecordNotFound) {
 			app.notFoundResponse(w, r, "task not found")
@@ -86,8 +93,8 @@ func (app *application) handleDeleteTask(w http.ResponseWriter, r *http.Request)
 		app.badRequestResponse(w, r, ErrInvalidIdParam)
 		return
 	}
-
-	err = app.models.Tasks.Delete(id)
+	user := app.contextGetUser(r)
+	err = app.models.Tasks.Delete(id, user.ID)
 	if err != nil {
 		if errors.Is(err, data.ErrRecordNotFound) {
 			app.notFoundResponse(w, r, "task not found")
@@ -112,7 +119,8 @@ func (app *application) handleUpdateTask(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	task, err := app.models.Tasks.GetByID(id)
+	user := app.contextGetUser(r)
+	task, err := app.models.Tasks.GetByID(id, user.ID)
 	if err != nil {
 		if errors.Is(err, data.ErrRecordNotFound) {
 			app.notFoundResponse(w, r, "task not found")

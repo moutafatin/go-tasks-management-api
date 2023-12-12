@@ -71,6 +71,7 @@ type Task struct {
 	Description string
 	Priority    TaskPriority
 	Status      TaskStatus
+	UserID      int       `db:"user_id"`
 	CreatedAt   time.Time `db:"created_at"`
 }
 
@@ -78,10 +79,10 @@ type tasksModel struct {
 	DB *pgxpool.Pool
 }
 
-func (t *tasksModel) GetAll() ([]*Task, error) {
-	stmt := `SELECT id, title, description, priority, status, created_at FROM tasks`
+func (t *tasksModel) GetAll(userID int) ([]*Task, error) {
+	stmt := `SELECT id, title, description, priority, status,user_id, created_at FROM tasks WHERE user_id = $1`
 
-	rows, err := t.DB.Query(context.Background(), stmt)
+	rows, err := t.DB.Query(context.Background(), stmt, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -89,13 +90,13 @@ func (t *tasksModel) GetAll() ([]*Task, error) {
 	return pgx.CollectRows(rows, pgx.RowToAddrOfStructByName[Task])
 }
 
-func (t *tasksModel) GetByID(id int) (*Task, error) {
-	stmt := `SELECT id, title, description, priority, status, created_at FROM tasks WHERE id = $1`
+func (t *tasksModel) GetByID(id, userID int) (*Task, error) {
+	stmt := `SELECT id, title, description, priority, status, user_id, created_at FROM tasks WHERE id = $1 AND user_id = $2`
 
-	row := t.DB.QueryRow(context.Background(), stmt, id)
+	row := t.DB.QueryRow(context.Background(), stmt, id, userID)
 
 	var task Task
-	err := row.Scan(&task.ID, &task.Title, &task.Description, &task.Priority, &task.Status, &task.CreatedAt)
+	err := row.Scan(&task.ID, &task.Title, &task.Description, &task.Priority, &task.Status, &task.UserID, &task.CreatedAt)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, ErrRecordNotFound
@@ -107,16 +108,16 @@ func (t *tasksModel) GetByID(id int) (*Task, error) {
 }
 
 func (t *tasksModel) Insert(task *Task) error {
-	stmt := `INSERT INTO tasks (title, description, priority, status) VALUES ($1, $2, $3, $4) RETURNING id, created_at`
+	stmt := `INSERT INTO tasks (title, description, priority, status,user_id) VALUES ($1, $2, $3, $4,$5) RETURNING id, created_at`
 
-	args := []any{task.Title, task.Description, task.Priority, task.Status}
+	args := []any{task.Title, task.Description, task.Priority, task.Status, task.UserID}
 
 	return t.DB.QueryRow(context.Background(), stmt, args...).Scan(&task.ID, &task.CreatedAt)
 }
 
-func (t *tasksModel) Delete(id int) error {
-	stmt := `DELETE FROM tasks WHERE id = $1`
-	res, err := t.DB.Exec(context.Background(), stmt, id)
+func (t *tasksModel) Delete(id, userID int) error {
+	stmt := `DELETE FROM tasks WHERE id = $1 AND user_id = $2`
+	res, err := t.DB.Exec(context.Background(), stmt, id, userID)
 	if err != nil {
 		return err
 	}
@@ -128,8 +129,8 @@ func (t *tasksModel) Delete(id int) error {
 }
 
 func (t *tasksModel) Update(task *Task) error {
-	stmt := `UPDATE tasks SET title = $1, description = $2, priority = $3, status = $4 WHERE id = $5`
-	args := []any{task.Title, task.Description, task.Priority, task.Status, task.ID}
+	stmt := `UPDATE tasks SET title = $1, description = $2, priority = $3, status = $4 WHERE id = $5 and user_id = $6`
+	args := []any{task.Title, task.Description, task.Priority, task.Status, task.ID, task.UserID}
 
 	_, err := t.DB.Exec(context.Background(), stmt, args...)
 
@@ -143,4 +144,7 @@ func ValidateTask(v *validator.Validator, task *Task) {
 	v.Check(validator.PremittedValues(task.Priority, []TaskPriority{TaskPriorityLow, TaskPriorityMedium, TaskPriorityHigh}), "priority", "Invalid priority value, must be one of `low`, `medium`, `high")
 	v.Check(validator.NotEmpty(string(task.Status)), "status", "status must not be empty if set")
 	v.Check(validator.PremittedValues(task.Status, []TaskStatus{taskStatusTodo, taskStatusInProgress, taskStatusDone}), "status", "Invalid status value, must be one of `todo`, `in_progress`, `done`")
+	if task.UserID < 1 {
+		panic("invalid operation,task can't exist without a user")
+	}
 }
