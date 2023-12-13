@@ -97,11 +97,30 @@ func (app *application) readIntParam(r *http.Request, key string) (int, error) {
 func getEnvInt(key string) int {
 	value, err := strconv.Atoi(os.Getenv(key))
 	if err != nil {
-		slog.Info("error getting env variable", "key", key)
+		slog.Error("error getting env variable", "key", key)
 		panic(err)
 	}
 
 	return value
+}
+
+func getEnvBool(key string) bool {
+	value, err := strconv.ParseBool(os.Getenv(key))
+	if err != nil {
+		slog.Error("error getting env variable", "key", key)
+		panic(err)
+
+	}
+
+	return value
+}
+
+func (app *application) getEnvBasedUrl() string {
+	if app.env.IsDevelopment() {
+		return fmt.Sprintf("http://localhost:%d", app.config.port)
+	}
+
+	return fmt.Sprintf("https://localhost:%d", app.config.port)
 }
 
 func (app *application) background(fn func()) {

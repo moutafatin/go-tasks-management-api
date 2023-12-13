@@ -3,7 +3,6 @@ package main
 import (
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 
 	"github.com/moutafatin/go-tasks-management-api/internal/data"
@@ -25,7 +24,7 @@ func (app *application) handleCreateTask(w http.ResponseWriter, r *http.Request)
 	}
 
 	user := app.contextGetUser(r)
-	log.Println("USER ID ", user.ID)
+
 	task := &data.Task{
 		Title:       input.Title,
 		Description: input.Description,
@@ -96,12 +95,12 @@ func (app *application) handleDeleteTask(w http.ResponseWriter, r *http.Request)
 	user := app.contextGetUser(r)
 	err = app.models.Tasks.Delete(id, user.ID)
 	if err != nil {
-		if errors.Is(err, data.ErrRecordNotFound) {
+		switch {
+		case errors.Is(err, data.ErrRecordNotFound):
 			app.notFoundResponse(w, r, "task not found")
-			return
+		default:
+			app.serverErrorResponse(w, r, err)
 		}
-
-		app.serverErrorResponse(w, r, err)
 		return
 	}
 
@@ -120,14 +119,15 @@ func (app *application) handleUpdateTask(w http.ResponseWriter, r *http.Request)
 	}
 
 	user := app.contextGetUser(r)
+
 	task, err := app.models.Tasks.GetByID(id, user.ID)
 	if err != nil {
-		if errors.Is(err, data.ErrRecordNotFound) {
+		switch {
+		case errors.Is(err, data.ErrRecordNotFound):
 			app.notFoundResponse(w, r, "task not found")
-			return
+		default:
+			app.serverErrorResponse(w, r, err)
 		}
-
-		app.serverErrorResponse(w, r, err)
 		return
 	}
 
