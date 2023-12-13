@@ -17,13 +17,13 @@ func (app *application) routes() http.Handler {
 	r.Group(func(r chi.Router) {
 		r.Use(app.requireActivatedUser)
 
-		r.Get("/api/v1/tasks", app.handleGetTasks)
-		r.Get("/api/v1/tasks/{id}", app.handleGetTaskByID)
-		r.Delete("/api/v1/tasks/{id}", app.handleDeleteTask)
-		r.Put("/api/v1/tasks/{id}", app.handleUpdateTask)
-
-		r.Post("/api/v1/tasks", app.handleCreateTask)
+		r.Get("/api/v1/tasks", app.handlers.Tasks.HandleGetTasks)
+		r.Get("/api/v1/tasks/{id}", app.handlers.Tasks.HandleGetTaskByID)
+		r.Delete("/api/v1/tasks/{id}", app.handlers.Tasks.HandleDeleteTask)
+		r.Put("/api/v1/tasks/{id}", app.handlers.Tasks.HandleUpdateTask)
+		r.Post("/api/v1/tasks", app.handlers.Tasks.HandleCreateTask)
 	})
+
 	r.Post("/api/v1/users", app.handleRegisterUser)
 	r.Put("/api/v1/users/activated", app.handleActivateUser)
 

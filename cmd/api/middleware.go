@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/moutafatin/go-tasks-management-api/internal/ctx"
 	"github.com/moutafatin/go-tasks-management-api/internal/data"
 	"github.com/moutafatin/go-tasks-management-api/internal/validator"
 	"golang.org/x/time/rate"
@@ -72,7 +73,7 @@ func (app *application) authenticate(next http.Handler) http.Handler {
 		authorizationHeader := r.Header.Get("Authorization")
 
 		if authorizationHeader == "" {
-			r = app.contextSetUser(r, data.AnonymousUser)
+			r = ctx.ContextSetUser(r, data.AnonymousUser)
 			next.ServeHTTP(w, r)
 			return
 		}
@@ -104,14 +105,14 @@ func (app *application) authenticate(next http.Handler) http.Handler {
 			return
 		}
 
-		r = app.contextSetUser(r, user)
+		r = ctx.ContextSetUser(r, user)
 		next.ServeHTTP(w, r)
 	})
 }
 
 func (app *application) requireAuthenticatedUser(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		user := app.contextGetUser(r)
+		user := ctx.ContextGetUser(r)
 		if user.IsAnonymous() {
 			app.unAuthorizedResponse(w, r)
 			return
@@ -123,7 +124,7 @@ func (app *application) requireAuthenticatedUser(next http.Handler) http.Handler
 
 func (app *application) requireActivatedUser(next http.Handler) http.Handler {
 	fn := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		user := app.contextGetUser(r)
+		user := ctx.ContextGetUser(r)
 		if !user.Activated {
 			app.inactiveAccountResponse(w, r)
 			return

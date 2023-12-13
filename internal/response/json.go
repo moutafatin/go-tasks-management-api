@@ -5,6 +5,8 @@ import (
 	"net/http"
 )
 
+type Envelope map[string]any
+
 func JSON(w http.ResponseWriter, status int, data any) error {
 	return JSONWithHeaders(w, status, data, nil)
 }

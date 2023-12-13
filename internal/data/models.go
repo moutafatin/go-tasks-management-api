@@ -8,8 +8,8 @@ type Models struct {
 	Tokens tokensModel
 }
 
-func NewModels(db *pgxpool.Pool) *Models {
-	return &Models{
+func NewModels(db *pgxpool.Pool) Models {
+	return Models{
 		Tasks: tasksModel{
 			DB: db,
 		},

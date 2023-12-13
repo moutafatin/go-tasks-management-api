@@ -9,7 +9,9 @@ import (
 
 	"github.com/moutafatin/go-tasks-management-api/internal/data"
 	"github.com/moutafatin/go-tasks-management-api/internal/env"
+	"github.com/moutafatin/go-tasks-management-api/internal/handlers"
 	"github.com/moutafatin/go-tasks-management-api/internal/mailer"
+	"github.com/moutafatin/go-tasks-management-api/internal/response"
 	"github.com/subosito/gotenv"
 )
 
@@ -38,12 +40,14 @@ type config struct {
 }
 
 type application struct {
-	models data.Models
-	logger *slog.Logger
-	config config
-	mailer mailer.Mailer
-	wg     sync.WaitGroup
-	env    currentEnv
+	models   data.Models
+	logger   *slog.Logger
+	config   config
+	mailer   mailer.Mailer
+	error    response.ErrorResponse
+	wg       sync.WaitGroup
+	env      currentEnv
+	handlers *handlers.Handlers
 }
 
 func main() {
@@ -82,12 +86,21 @@ func main() {
 
 	logger.Info("Connected to database")
 
+	errorResponse := response.ErrorResponse{
+		Logger: logger,
+	}
+
+	models := data.NewModels(db)
 	app := &application{
-		models: *data.NewModels(db),
+		models: data.NewModels(db),
 		logger: logger,
 		config: cfg,
 		mailer: mailer.New(cfg.smtp.host, cfg.smtp.port, cfg.smtp.username, cfg.smtp.password, cfg.smtp.sender),
-		env:    currentEnv(cfg.environment),
+		error:  errorResponse, env: currentEnv(cfg.environment),
+		handlers: handlers.New(handlers.Config{
+			Error:  errorResponse,
+			Models: models,
+		}),
 	}
 
 	err = app.serve()
