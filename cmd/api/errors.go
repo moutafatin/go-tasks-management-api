@@ -3,6 +3,9 @@ package main
 import (
 	"errors"
 	"net/http"
+	"runtime/debug"
+
+	"github.com/moutafatin/go-tasks-management-api/internal/response"
 )
 
 const defautNotFoundMessage = "the requested resource could not be found"
@@ -13,12 +16,13 @@ func (app *application) logError(r *http.Request, err error) {
 	var (
 		uri    = r.URL.RequestURI()
 		method = r.Method
+		trace  = string(debug.Stack())
 	)
-	app.logger.Error(err.Error(), "uri", uri, "method", method)
+	app.logger.Error(err.Error(), "uri", uri, "method", method, "trace", trace)
 }
 
 func (app *application) errorResponse(w http.ResponseWriter, r *http.Request, status int, message any) {
-	err := app.writeJSON(w, status, envelope{"error": message}, nil)
+	err := response.JSON(w, status, envelope{"error": message})
 	if err != nil {
 		app.logError(r, err)
 		w.WriteHeader(status)

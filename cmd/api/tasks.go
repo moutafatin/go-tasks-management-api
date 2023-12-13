@@ -6,6 +6,8 @@ import (
 	"net/http"
 
 	"github.com/moutafatin/go-tasks-management-api/internal/data"
+	"github.com/moutafatin/go-tasks-management-api/internal/request"
+	"github.com/moutafatin/go-tasks-management-api/internal/response"
 	"github.com/moutafatin/go-tasks-management-api/internal/validator"
 )
 
@@ -17,7 +19,7 @@ func (app *application) handleCreateTask(w http.ResponseWriter, r *http.Request)
 		Status      *string `json:"status"`
 	}
 
-	err := app.readJSON(w, r, &input)
+	err := request.DecodeJSONStrict(w, r, &input)
 	if err != nil {
 		app.badRequestResponse(w, r, err)
 		return
@@ -44,7 +46,10 @@ func (app *application) handleCreateTask(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	w.Header().Add("location", fmt.Sprint("api/v1/tasks/", task.ID))
-	app.writeJSON(w, http.StatusCreated, envelope{"task": task}, w.Header())
+	err = response.JSONWithHeaders(w, http.StatusCreated, envelope{"task": task}, w.Header())
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
 }
 
 func (app *application) handleGetTasks(w http.ResponseWriter, r *http.Request) {
@@ -54,7 +59,7 @@ func (app *application) handleGetTasks(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 
-	err = app.writeJSON(w, http.StatusOK, envelope{"tasks": tasks}, nil)
+	err = response.JSON(w, http.StatusOK, envelope{"tasks": tasks})
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}
@@ -80,7 +85,7 @@ func (app *application) handleGetTaskByID(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	err = app.writeJSON(w, http.StatusOK, envelope{"task": task}, nil)
+	err = response.JSON(w, http.StatusOK, envelope{"task": task})
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}
@@ -105,7 +110,7 @@ func (app *application) handleDeleteTask(w http.ResponseWriter, r *http.Request)
 	}
 
 	// maybe return 201 no content, its depend
-	err = app.writeJSON(w, http.StatusOK, envelope{"message": "task deleted successfully"}, nil)
+	err = response.JSON(w, http.StatusOK, envelope{"message": "task deleted successfully"})
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}
@@ -138,7 +143,7 @@ func (app *application) handleUpdateTask(w http.ResponseWriter, r *http.Request)
 		Status      *string `json:"status"`
 	}
 
-	err = app.readJSON(w, r, &input)
+	err = request.DecodeJSONStrict(w, r, &input)
 	if err != nil {
 		app.badRequestResponse(w, r, err)
 		return
@@ -170,7 +175,7 @@ func (app *application) handleUpdateTask(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	err = app.writeJSON(w, http.StatusOK, envelope{"message": "task updated successfully"}, nil)
+	err = response.JSON(w, http.StatusOK, envelope{"message": "task updated successfully"})
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return

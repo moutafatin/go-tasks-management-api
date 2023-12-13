@@ -8,16 +8,15 @@ import (
 	"sync"
 
 	"github.com/moutafatin/go-tasks-management-api/internal/data"
+	"github.com/moutafatin/go-tasks-management-api/internal/env"
 	"github.com/moutafatin/go-tasks-management-api/internal/mailer"
 	"github.com/subosito/gotenv"
 )
 
-type env struct {
-	environment string
-}
+type currentEnv string
 
-func (e env) IsDevelopment() bool {
-	return strings.Trim(e.environment, " ") == "development"
+func (e currentEnv) IsDevelopment() bool {
+	return strings.Trim(string(e), " ") == "development"
 }
 
 type config struct {
@@ -44,7 +43,7 @@ type application struct {
 	config config
 	mailer mailer.Mailer
 	wg     sync.WaitGroup
-	env    env
+	env    currentEnv
 }
 
 func main() {
@@ -52,23 +51,23 @@ func main() {
 
 	var cfg config
 
-	flag.IntVar(&cfg.port, "port", getEnvInt("PORT"), "TCP port to listen to")
+	flag.IntVar(&cfg.port, "port", env.GetInt("PORT", 4000), "TCP port to listen to")
 
-	flag.StringVar(&cfg.environment, "environment", os.Getenv("ENV"), "environment development|staging|production")
+	flag.StringVar(&cfg.environment, "environment", env.GetString("ENV", "development"), "environment development|staging|production")
 
-	flag.StringVar(&cfg.db.dsn, "dsn", os.Getenv("POSTGRES_URL"), "Postgres connection url")
-	flag.IntVar(&cfg.db.maxOpenConn, "db-max-open-conns", getEnvInt("DB_MAX_OPEN_CONN"), "Pool maximum open connections")
-	flag.StringVar(&cfg.db.maxIdleConnTime, "db-max-idle-time", os.Getenv("DB_MAX_IDLE_TIME"), "Pool maximum idle connection time")
+	flag.StringVar(&cfg.db.dsn, "dsn", env.GetString("POSTGRES_URL", ""), "Postgres connection url")
+	flag.IntVar(&cfg.db.maxOpenConn, "db-max-open-conns", env.GetInt("DB_MAX_OPEN_CONN", 25), "Pool maximum open connections")
+	flag.StringVar(&cfg.db.maxIdleConnTime, "db-max-idle-time", env.GetString("DB_MAX_IDLE_TIME", "15m"), "Pool maximum idle connection time")
 
-	flag.Float64Var(&cfg.limiter.rps, "limiter-rps", float64(getEnvInt("LIMITER_RPS")), "Rate limiter maximum requests per second")
-	flag.IntVar(&cfg.limiter.burst, "limiter-burst", getEnvInt("LIMITER_BURST"), "Rate limiter maximum burst")
-	flag.BoolVar(&cfg.limiter.enabled, "limiter-enabled", getEnvBool("LIMITER_ENABLED"), "Enable rate limiter")
+	flag.Float64Var(&cfg.limiter.rps, "limiter-rps", float64(env.GetInt("LIMITER_RPS", 2)), "Rate limiter maximum requests per second")
+	flag.IntVar(&cfg.limiter.burst, "limiter-burst", env.GetInt("LIMITER_BURST", 4), "Rate limiter maximum burst")
+	flag.BoolVar(&cfg.limiter.enabled, "limiter-enabled", env.GetBool("LIMITER_ENABLED", false), "Enable rate limiter")
 
-	flag.StringVar(&cfg.smtp.host, "smtp-host", os.Getenv("SMTP_HOST"), "SMTP host")
-	flag.IntVar(&cfg.smtp.port, "smtp-port", getEnvInt("SMTP_PORT"), "SMTP port")
-	flag.StringVar(&cfg.smtp.username, "smtp-username", os.Getenv("SMTP_USERNAME"), "SMTP username")
-	flag.StringVar(&cfg.smtp.password, "smtp-password", os.Getenv("SMTP_PASSWORD"), "SMTP password")
-	flag.StringVar(&cfg.smtp.sender, "smtp-sender", os.Getenv("SMTP_SENDER"), "SMTP sender")
+	flag.StringVar(&cfg.smtp.host, "smtp-host", env.GetString("SMTP_HOST", ""), "SMTP host")
+	flag.IntVar(&cfg.smtp.port, "smtp-port", env.GetInt("SMTP_PORT", 0), "SMTP port")
+	flag.StringVar(&cfg.smtp.username, "smtp-username", env.GetString("SMTP_USERNAME", ""), "SMTP username")
+	flag.StringVar(&cfg.smtp.password, "smtp-password", env.GetString("SMTP_PASSWORD", ""), "SMTP password")
+	flag.StringVar(&cfg.smtp.sender, "smtp-sender", env.GetString("SMTP_SENDER", ""), "SMTP sender")
 
 	flag.Parse()
 
@@ -88,9 +87,7 @@ func main() {
 		logger: logger,
 		config: cfg,
 		mailer: mailer.New(cfg.smtp.host, cfg.smtp.port, cfg.smtp.username, cfg.smtp.password, cfg.smtp.sender),
-		env: env{
-			environment: cfg.environment,
-		},
+		env:    currentEnv(cfg.environment),
 	}
 
 	err = app.serve()

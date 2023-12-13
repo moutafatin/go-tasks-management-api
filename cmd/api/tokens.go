@@ -6,6 +6,8 @@ import (
 	"time"
 
 	"github.com/moutafatin/go-tasks-management-api/internal/data"
+	"github.com/moutafatin/go-tasks-management-api/internal/request"
+	"github.com/moutafatin/go-tasks-management-api/internal/response"
 	"github.com/moutafatin/go-tasks-management-api/internal/validator"
 )
 
@@ -15,7 +17,7 @@ func (app *application) handleCreateAuthenticationToken(w http.ResponseWriter, r
 		Password string `json:"password"`
 	}
 
-	err := app.readJSON(w, r, &input)
+	err := request.DecodeJSONStrict(w, r, &input)
 	if err != nil {
 		app.badRequestResponse(w, r, err)
 		return
@@ -58,9 +60,9 @@ func (app *application) handleCreateAuthenticationToken(w http.ResponseWriter, r
 		return
 	}
 
-	err = app.writeJSON(w, http.StatusCreated, envelope{
+	err = response.JSON(w, http.StatusCreated, envelope{
 		"authentication_token": token,
-	}, nil)
+	})
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}

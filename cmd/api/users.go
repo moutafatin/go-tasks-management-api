@@ -6,6 +6,8 @@ import (
 	"time"
 
 	"github.com/moutafatin/go-tasks-management-api/internal/data"
+	"github.com/moutafatin/go-tasks-management-api/internal/request"
+	"github.com/moutafatin/go-tasks-management-api/internal/response"
 	"github.com/moutafatin/go-tasks-management-api/internal/validator"
 )
 
@@ -16,7 +18,7 @@ func (app *application) handleRegisterUser(w http.ResponseWriter, r *http.Reques
 		Password string `json:"password"`
 	}
 
-	err := app.readJSON(w, r, &input)
+	err := request.DecodeJSONStrict(w, r, &input)
 	if err != nil {
 		app.badRequestResponse(w, r, err)
 		return
@@ -70,7 +72,7 @@ func (app *application) handleRegisterUser(w http.ResponseWriter, r *http.Reques
 		}
 	})
 
-	err = app.writeJSON(w, http.StatusAccepted, envelope{"user": user}, nil)
+	err = response.JSON(w, http.StatusAccepted, envelope{"user": user})
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
@@ -82,7 +84,7 @@ func (app *application) handleActivateUser(w http.ResponseWriter, r *http.Reques
 		ActivationToken string
 	}
 
-	err := app.readJSON(w, r, &input)
+	err := request.DecodeJSONStrict(w, r, &input)
 	if err != nil {
 		app.badRequestResponse(w, r, err)
 		return
@@ -120,7 +122,7 @@ func (app *application) handleActivateUser(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	err = app.writeJSON(w, http.StatusOK, envelope{"user": user}, nil)
+	err = response.JSON(w, http.StatusOK, envelope{"user": user})
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}
